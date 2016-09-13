@@ -16,21 +16,33 @@ class PublindexSpider(scrapy.Spider):
     self.download_delay = 1/float(self.rate)
 
   def parse(self, response):
-    self.parse_magazines(response)
+
 
     # Is there next page?
-    if response.css("#Toda_Revista_Data .toolbar table tr td:nth-child(3) img::attr(src)").extract() != "/publindex/images/table/nextPageDisabled.gif":
+    if response.css("#Toda_Revista_Data .toolbar table tr td:nth-child(3) img::attr(src)").extract()[0] != "/publindex/images/table/nextPageDisabled.gif":
       #load next page
-      print "Requesting next page"
-      next_url = URL%(int(urlparse.parse_qs(response.url)["Toda_Revista_Data_p_"])+1)
-      yield scrapy.Request(response.urljoin(next_url), self.parse_magazines)
 
+      next_url = URL%(int(urlparse.parse_qs(response.url)["Toda_Revista_Data_p_"][0])+1)
+      print "Requesting next page", int(urlparse.parse_qs(response.url)["Toda_Revista_Data_p_"][0])+1, next_url
+      # if (int(urlparse.parse_qs(response.url)["Toda_Revista_Data_p_"][0])+1 ) <= 2:
+      yield scrapy.Request(response.urljoin(next_url), self.parse)
 
-  def parse_magazines(self, response):
-    print "parse magazine"
+    # yield self.parse_magazines(response)
+    print "**Parse magazine"
     for magazine in response.css('#Toda_Revista_Data tbody:nth-child(2) tr'):
       yield {"year": magazine.css("td:nth-child(2)::text").extract(),
         "issn":magazine.css("td:nth-child(3)::text").extract(),
         "name":magazine.css("td:nth-child(4)::text").extract()
       }
+
+    # yield scrapy.Request(response.url, self.parse_magazines)
+
+
+  # def parse_magazines(self, response):
+  #   print "**Parse magazine"
+  #   for magazine in response.css('#Toda_Revista_Data tbody:nth-child(2) tr'):
+  #     yield {"year": magazine.css("td:nth-child(2)::text").extract(),
+  #       "issn":magazine.css("td:nth-child(3)::text").extract(),
+  #       "name":magazine.css("td:nth-child(4)::text").extract()
+  #     }
 
